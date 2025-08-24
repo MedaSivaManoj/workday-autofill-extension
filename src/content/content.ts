@@ -106,8 +106,9 @@ async function fillByLabels(p: ProfileData) {
     if (hint.includes("email")) value = p.email ?? randomEmail();
     else if (hint.includes("phone")) value = p.phoneNumber ?? randomPhone();
     else {
-      // keyword mapping
-      for (const key of Object.keys(FIELD_HINTS)) {
+      // keyword mapping - check longer matches first
+      const sortedKeys = Object.keys(FIELD_HINTS).sort((a, b) => b.length - a.length);
+      for (const key of sortedKeys) {
         if (hint.includes(key)) {
           console.log("[WDAF] Found keyword match:", key, "for hint:", hint);
           const candidates = FIELD_HINTS[key as keyof typeof FIELD_HINTS];
