@@ -89,11 +89,16 @@ async function fillVisibleStep(p: ProfileData) {
 }
 
 async function fillByLabels(p: ProfileData) {
+  console.log("[WDAF] Starting fillByLabels with profile:", p);
   const inputs = Array.from(document.querySelectorAll("input, textarea, select")) as (HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement)[];
+  console.log("[WDAF] Found", inputs.length, "form inputs");
+  
   for (const el of inputs) {
     const label = nearestLabel(el);
     const hint = (label || el.getAttribute("placeholder") || el.getAttribute("aria-label") || "").trim().toLowerCase();
     if (!hint) continue;
+
+    console.log("[WDAF] Processing field:", { hint, element: el.tagName, type: el instanceof HTMLInputElement ? el.type : 'N/A' });
 
     let value: string | undefined;
 
@@ -104,10 +109,15 @@ async function fillByLabels(p: ProfileData) {
       // keyword mapping
       for (const key of Object.keys(FIELD_HINTS)) {
         if (hint.includes(key)) {
+          console.log("[WDAF] Found keyword match:", key, "for hint:", hint);
           const candidates = FIELD_HINTS[key as keyof typeof FIELD_HINTS];
           for (const c of candidates) {
             const v = (p as any)[c];
-            if (typeof v === "string" && v) { value = v; break; }
+            if (typeof v === "string" && v) { 
+              value = v; 
+              console.log("[WDAF] Using value:", value, "from field:", c);
+              break; 
+            }
           }
         }
         if (value) break;
@@ -135,14 +145,20 @@ async function fillByLabels(p: ProfileData) {
       const type = (el.type || "").toLowerCase();
       if (type === "checkbox") {
         const yes = ["yes", "y", "true", "1"];
-        setCheckbox(el, yes.includes(String(value ?? "").toLowerCase()));
+        const shouldCheck = yes.includes(String(value ?? "").toLowerCase());
+        console.log("[WDAF] Checkbox:", hint, "value:", value, "shouldCheck:", shouldCheck);
+        setCheckbox(el, shouldCheck);
         continue;
       }
       if (type === "radio") {
         // pick radio matching text
         const grp = document.querySelectorAll(`input[type=radio][name="${el.name}"]`);
         const label = nearestLabel(el)?.toLowerCase() ?? "";
-        if (value && label.includes(String(value).toLowerCase())) (el as HTMLInputElement).click();
+        console.log("[WDAF] Radio button:", hint, "label:", label, "value:", value);
+        if (value && label.includes(String(value).toLowerCase())) {
+          console.log("[WDAF] Clicking radio button:", el);
+          (el as HTMLInputElement).click();
+        }
         continue;
       }
       if (type === "date") {
@@ -166,8 +182,15 @@ async function fillByLabels(p: ProfileData) {
     if (el instanceof HTMLSelectElement) {
       if (!value) continue;
       const options = Array.from(el.options);
+      console.log("[WDAF] Dropdown:", hint, "value:", value, "options:", options.map(o => o.textContent?.trim()));
       const idx = options.findIndex(o => (o.textContent || "").trim().toLowerCase().includes(String(value).toLowerCase()));
-      if (idx >= 0) { el.selectedIndex = idx; el.dispatchEvent(new Event("change", { bubbles: true })); }
+      if (idx >= 0) { 
+        console.log("[WDAF] Selecting dropdown option:", options[idx].textContent, "at index:", idx);
+        el.selectedIndex = idx; 
+        el.dispatchEvent(new Event("change", { bubbles: true })); 
+      } else {
+        console.log("[WDAF] No matching option found for:", value);
+      }
       continue;
     }
   }

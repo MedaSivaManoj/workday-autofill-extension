@@ -36,8 +36,6 @@ export const FIELD_HINTS: Record<string, (keyof ProfileData)[]> = {
   "last name": ["lastName", "familyName"],
   "surname": ["lastName"],
   "preferred": ["preferredName"],
-  "preferred name": ["hasPreferredName"],
-  "have a preferred": ["hasPreferredName"],
   "full name": ["fullName"],
   "email": ["email"],
   "phone": ["phoneNumber"],
@@ -60,8 +58,16 @@ export const FIELD_HINTS: Record<string, (keyof ProfileData)[]> = {
   "gender": ["gender"],
   "how did you hear": ["howDidYouHearAboutUs"],
   "hear about us": ["howDidYouHearAboutUs"],
+  "how did you learn": ["howDidYouHearAboutUs"],
   "referral source": ["howDidYouHearAboutUs"],
+  "source": ["howDidYouHearAboutUs"],
   "previously worked": ["previouslyWorkedForCompany"],
   "worked for": ["previouslyWorkedForCompany"],
-  "employee or contractor": ["previouslyWorkedForCompany"]
+  "previous employee": ["previouslyWorkedForCompany"],
+  "employee or contractor": ["previouslyWorkedForCompany"],
+  "worked as": ["previouslyWorkedForCompany"],
+  "preferred name": ["hasPreferredName"],
+  "have a preferred": ["hasPreferredName"],
+  "use preferred": ["hasPreferredName"],
+  "nickname": ["hasPreferredName"]
 };
