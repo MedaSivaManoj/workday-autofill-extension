@@ -151,10 +151,29 @@ async function fillByLabels(p: ProfileData) {
         continue;
       }
       if (type === "radio") {
-        // pick radio matching text
-        const grp = document.querySelectorAll(`input[type=radio][name="${el.name}"]`);
+        // For radio buttons, also check parent context for question
+        let questionContext = "";
+        let parent = el.parentElement;
+        for (let i = 0; i < 3 && parent; i++) {
+          const questionEl = parent.querySelector("legend, h3, h4, [role='heading'], label");
+          if (questionEl) {
+            questionContext = (questionEl.textContent || "").toLowerCase();
+            break;
+          }
+          parent = parent.parentElement;
+        }
+        
+        console.log("[WDAF] Radio button:", hint, "questionContext:", questionContext, "label:", nearestLabel(el)?.toLowerCase() ?? "", "value:", value);
+        
+        // If no value found yet, try to infer from question context
+        if (!value && questionContext) {
+          if (questionContext.includes("previously worked") || questionContext.includes("worked for")) {
+            value = p.previouslyWorkedForCompany;
+            console.log("[WDAF] Inferred radio value from context:", value);
+          }
+        }
+        
         const label = nearestLabel(el)?.toLowerCase() ?? "";
-        console.log("[WDAF] Radio button:", hint, "label:", label, "value:", value);
         if (value && label.includes(String(value).toLowerCase())) {
           console.log("[WDAF] Clicking radio button:", el);
           (el as HTMLInputElement).click();
@@ -190,6 +209,27 @@ async function fillByLabels(p: ProfileData) {
         el.dispatchEvent(new Event("change", { bubbles: true })); 
       } else {
         console.log("[WDAF] No matching option found for:", value);
+      }
+      continue;
+    }
+    
+    // Check for custom dropdowns or combobox elements
+    if ((el as HTMLElement).getAttribute("role") === "combobox" || (el as HTMLElement).getAttribute("aria-haspopup") === "listbox") {
+      console.log("[WDAF] Custom dropdown detected:", hint, "value:", value);
+      if (value) {
+        // Try clicking to open dropdown
+        (el as HTMLElement).click();
+        await sleep(300);
+        // Look for dropdown options
+        const dropdownOptions = Array.from(document.querySelectorAll('[role="option"], [data-automation-id*="option"]'));
+        console.log("[WDAF] Found dropdown options:", dropdownOptions.map(opt => opt.textContent?.trim()));
+        for (const option of dropdownOptions) {
+          if ((option.textContent || "").toLowerCase().includes(String(value).toLowerCase())) {
+            console.log("[WDAF] Clicking custom dropdown option:", option.textContent);
+            (option as HTMLElement).click();
+            break;
+          }
+        }
       }
       continue;
     }
