@@ -1,0 +1,87 @@
+export type WorkExperience = {
+  jobTitle?: string;
+  companyName?: string;
+  startDate?: string;
+  endDate?: string;
+  skills?: string[];
+  stillWorking?: boolean;
+  description?: string;
+  location?: string;
+  workType?: string;
+};
+
+export type ProjectExperience = {
+  projectName?: string;
+  startDate?: string;
+  endDate?: string;
+  skills?: string[];
+  stillWorking?: boolean;
+  description?: string;
+  gitUrl?: string;
+  hostUrl?: string;
+};
+
+export type EducationExperience = {
+  courseName?: string;
+  field?: string;
+  collegeName?: string;
+  startDate?: string;
+  endDate?: string;
+  skills?: string[];
+  stillStudying?: boolean;
+  description?: string;
+  grade?: string;
+  location?: string;
+  educationType?: string;
+};
+
+export type ProfileData = {
+  fullName?: string;
+  firstName?: string;
+  middleName?: string;
+  lastName?: string;
+  preferredName?: string;
+  familyName?: string;
+  phoneNumber?: string;
+  phoneAlternativeNumber?: string;
+  email?: string;
+  emailAlternative?: string;
+  phoneCode?: string;
+  DoB?: string;
+  address1?: string;
+  address2?: string;
+  apartment?: string;
+  building?: string;
+  floor?: string;
+  houseNumber?: string;
+  street?: string;
+  city?: string;
+  state?: string;
+  gender?: string;
+  country?: string;
+  linkedinUrl?: string;
+  twitterUrl?: string;
+  githubUrl?: string;
+  nationality?: string;
+  prefix?: string;
+  maritalStatus?: string;
+  servedInMilitary?: string;
+  workedPreviously?: string;
+  userName?: string;
+  password?: string;
+  degree?: string;
+  grossSalary?: string;
+  noticePeriod?: string;
+  phoneDeviceType?: string;
+  expectedSalary?: string;
+  zip?: string;
+  workAuthorization?: string;
+  visaSponsorship?: string;
+  disability?: string;
+  veteran?: string;
+  ethnicity?: string;
+  age?: string;
+  workExperiences?: WorkExperience[];
+  projectExperiences?: ProjectExperience[];
+  educationExperiences?: EducationExperience[];
+};

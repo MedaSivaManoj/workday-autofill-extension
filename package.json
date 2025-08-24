@@ -1,0 +1,29 @@
+{
+  "name": "workday-autofill-extension",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build && node scripts/build-content.mjs && node scripts/copy-manifest.mjs",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@vitejs/plugin-react": "^5.0.1",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1"
+  },
+  "devDependencies": {
+    "@types/chrome": "^0.0.281",
+    "@types/react": "^18.3.3",
+    "@types/react-dom": "^18.3.0",
+    "typescript": "^5.4.5",
+    "vite": "^5.4.19"
+  },
+  "imports": {
+    "#shared/*": "./src/shared/*",
+    "#content/*": "./src/content/*",
+    "#background/*": "./src/background/*",
+    "#popup/*": "./src/popup/*"
+  }
+}

@@ -1,0 +1,115 @@
+{
+  "fullName": "John Doe",
+  "firstName": "John",
+  "middleName": "M",
+  "lastName": "Doe",
+  "preferredName": "Johnny",
+  "familyName": "Doe Family",
+  "phoneNumber": "+14155552671",
+  "phoneAlternativeNumber": "+441632960961",
+  "email": "john.doe@example.com",
+  "emailAlternative": "johndoe.alt@example.com",
+  "phoneCode": "+1",
+  "DoB": "1990-01-01",
+  "address1": "123 Main Street",
+  "address2": "Suite 4B",
+  "apartment": "4B",
+  "building": "Sunrise Towers",
+  "floor": "4",
+  "houseNumber": "123",
+  "street": "Main Street",
+  "city": "San Francisco",
+  "state": "California",
+  "gender": "Male",
+  "country": "USA",
+  "linkedinUrl": "https://linkedin.com/in/johndoe",
+  "twitterUrl": "https://twitter.com/johndoe",
+  "githubUrl": "https://github.com/johndoe",
+  "nationality": "American",
+  "prefix": "Mr.",
+  "maritalStatus": "single",
+  "servedInMilitary": "no",
+  "workedPreviously": "yes",
+  "userName": "johndoe",
+  "password": "password123",
+  "degree": "Bachelor of Science",
+  "grossSalary": "90000",
+  "noticePeriod": "2 months",
+  "phoneDeviceType": "iPhone",
+  "expectedSalary": "100000",
+  "zip": "94105",
+  "workAuthorization": "Yes",
+  "visaSponsorship": "No",
+  "disability": "No",
+  "veteran": "No",
+  "ethnicity": "White",
+  "age": "35",
+  "workExperiences": [
+    {
+      "jobTitle": "Software Engineer",
+      "companyName": "TechCorp Inc.",
+      "startDate": "2018-06-01",
+      "endDate": "2021-08-31",
+      "skills": [
+        "React",
+        "Node.js",
+        "SQL"
+      ],
+      "stillWorking": false,
+      "description": "Developed and maintained enterprise applications.",
+      "location": "New York",
+      "workType": "Full-time"
+    },
+    {
+      "jobTitle": "Senior Backend Developer",
+      "companyName": "Innovatech Solutions",
+      "startDate": "2021-09-01",
+      "endDate": "2024-07-01",
+      "skills": [
+        "Python",
+        "Django",
+        "PostgreSQL",
+        "Docker",
+        "AWS"
+      ],
+      "stillWorking": false,
+      "description": "Led the backend development team in building scalable microservices and API integrations for fintech products.",
+      "location": "San Francisco",
+      "workType": "Full-time"
+    }
+  ],
+  "projectExperiences": [
+    {
+      "projectName": "AI Chatbot",
+      "startDate": "2020-01-01",
+      "endDate": "2020-12-31",
+      "skills": [
+        "Python",
+        "NLP"
+      ],
+      "stillWorking": false,
+      "description": "Built a customer support chatbot for a SaaS platform.",
+      "gitUrl": "https://github.com/johndoe/ai-chatbot",
+      "hostUrl": "https://ai-chatbot.example.com"
+    }
+  ],
+  "educationExperiences": [
+    {
+      "courseName": "Computer Science",
+      "field": "Engineering",
+      "collegeName": "MIT",
+      "startDate": "2010-09-01",
+      "endDate": "2014-06-30",
+      "skills": [
+        "Java",
+        "Algorithms",
+        "Data Structures"
+      ],
+      "stillStudying": false,
+      "description": "Graduated with honors.",
+      "grade": "A",
+      "location": "Cambridge, MA",
+      "educationType": "Higher Education"
+    }
+  ]
+}
