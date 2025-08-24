@@ -81,6 +81,9 @@ export type ProfileData = {
   veteran?: string;
   ethnicity?: string;
   age?: string;
+  howDidYouHearAboutUs?: string;
+  previouslyWorkedForCompany?: string;
+  hasPreferredName?: string;
   workExperiences?: WorkExperience[];
   projectExperiences?: ProjectExperience[];
   educationExperiences?: EducationExperience[];
