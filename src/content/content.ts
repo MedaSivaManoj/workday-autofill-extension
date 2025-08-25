@@ -8,15 +8,23 @@ declare global {
   interface Window { __WDAF_RUNNING?: boolean }
 }
 
-console.log('[WDAF] Content script loaded on:', location.href);
+console.log("[WDAF] Content script loaded on:", location.href);
 
-chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
-  console.log('[WDAF] Received message:', msg);
-  if (msg?.type === "START_AUTOFILL") {
+// Singleton guard to prevent multiple runs
+declare global {
+  interface Window {
+    __WDAF_RUNNING?: boolean;
+    __WDAF_INITIALIZED?: boolean;
+  }
+}
+
+chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+  console.log("[WDAF] Received message:", message);
+  if (message?.type === "START_AUTOFILL") {
     start().then(() => {
       sendResponse({ success: true });
-    }).catch((error) => {
-      console.error('[WDAF] Start error:', error);
+    }).catch(error => {
+      console.error("[WDAF] Start error:", error);
       sendResponse({ success: false, error: error.message });
     });
     return true; // Indicates we will send a response asynchronously
@@ -34,9 +42,84 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
   }
 })();
 
+function waitForForm(callback: () => void, maxWaitTime = 10000) {
+  const startTime = Date.now();
+  const interval = setInterval(() => {
+    const inputs = document.querySelectorAll("input, textarea, select");
+    if (inputs.length > 0) {
+      clearInterval(interval);
+      console.log("[WDAF] Form elements found, starting autofill.");
+      callback();
+    } else if (Date.now() - startTime > maxWaitTime) {
+      clearInterval(interval);
+      console.log("[WDAF] Timeout waiting for form elements.");
+      callback(); // Proceed anyway
+    }
+  }, 300);
+}
+
+function getRadioQuestionContext(radio: HTMLInputElement): string {
+  // Try <fieldset><legend> first
+  const fieldset = radio.closest("fieldset");
+  if (fieldset) {
+    const legend = fieldset.querySelector("legend");
+    if (legend) {
+      const text = legend.textContent?.trim();
+      if (text && text.length > 5) return text.toLowerCase();
+    }
+  }
+
+  // Try parent elements for question text
+  let parent = radio.parentElement;
+  for (let i = 0; i < 5 && parent; i++) {
+    // Look for headings or question elements
+    const questionEl = parent.querySelector("h1, h2, h3, h4, h5, h6, [role='heading'], .question, [data-automation-id*='question']");
+    if (questionEl) {
+      const text = questionEl.textContent?.trim();
+      if (text && text.length > 5 && !text.match(/^(yes|no|y|n)$/i)) {
+        return text.toLowerCase();
+      }
+    }
+
+    // Check for text nodes with question-like content
+    const walker = document.createTreeWalker(
+      parent,
+      NodeFilter.SHOW_TEXT,
+      {
+        acceptNode: (node) => {
+          const text = node.textContent?.trim() || "";
+          return text.length > 10 && text.includes("?") ? NodeFilter.FILTER_ACCEPT : NodeFilter.FILTER_REJECT;
+        }
+      }
+    );
+
+    const textNode = walker.nextNode();
+    if (textNode) {
+      const text = textNode.textContent?.trim();
+      if (text) return text.toLowerCase();
+    }
+
+    parent = parent.parentElement;
+  }
+
+  // Fallback: check for aria-describedby or nearby labels
+  const ariaDescribedBy = radio.getAttribute("aria-describedby");
+  if (ariaDescribedBy) {
+    const descElement = document.getElementById(ariaDescribedBy);
+    if (descElement) {
+      const text = descElement.textContent?.trim();
+      if (text && text.length > 5) return text.toLowerCase();
+    }
+  }
+
+  return "";
+}
+
 async function start() {
-  if (window.__WDAF_RUNNING) return;
+  if (window.__WDAF_RUNNING || window.__WDAF_INITIALIZED) return;
   window.__WDAF_RUNNING = true;
+  window.__WDAF_INITIALIZED = true;
+  
   try {
     const data = await loadData();
     if (!data) {
@@ -46,7 +129,11 @@ async function start() {
     }
     const profile = canonicalProfile(data);
     console.log("[WDAF] Starting autofill.");
-    await runFlow(profile);
+    
+    // Wait for form elements before starting
+    waitForForm(() => {
+      runFlow(profile);
+    });
   } catch (e) {
     console.error("[WDAF] Error", e);
   } finally {
@@ -55,18 +142,24 @@ async function start() {
 }
 
 async function runFlow(profile: ProfileData) {
-  // Workday apps can be React-based with dynamic content.
-  // Strategy: for each step, wait a moment, fill known fields, then click Continue.
-  for (let i=0; i<12; i++) {
+  // Reduced iterations and better control to prevent excessive repetition
+  for (let i = 0; i < 3; i++) {
+    console.log(`[WDAF] Autofill iteration ${i + 1}/3`);
     await fillVisibleStep(profile);
+    
+    // Try to advance to next step
     const advanced = clickByTexts(["save and continue", "continue", "next", "review", "submit", "ok"]);
-    await sleep(1500);
+    await sleep(2000); // Longer wait between attempts
+    
     if (!advanced) {
-      // try scrolling to trigger lazy mounts
+      // Try scrolling to trigger lazy mounts
       window.scrollTo({ top: document.body.scrollHeight, behavior: "smooth" });
-      await sleep(800);
+      await sleep(1000);
       window.scrollTo({ top: 0, behavior: "smooth" });
-      await sleep(700);
+      await sleep(1000);
+    } else {
+      // If we successfully advanced, wait longer for new page to load
+      await sleep(3000);
     }
   }
 }
@@ -157,52 +250,14 @@ async function fillByLabels(p: ProfileData) {
         continue;
       }
       if (type === "radio") {
-        // For radio buttons, find the actual question context (not just the label)
-        let questionContext = "";
-        let parent = el.parentElement;
-        
-        // Look for the question text in parent elements
-        for (let i = 0; i < 5 && parent; i++) {
-          // Look for elements that might contain the question
-          const possibleQuestions = parent.querySelectorAll("legend, h1, h2, h3, h4, h5, h6, [role='heading'], .question, [data-automation-id*='question']");
-          
-          for (const questionEl of Array.from(possibleQuestions)) {
-            const text = (questionEl.textContent || "").trim().toLowerCase();
-            // Skip if it's just "yes" or "no" or very short
-            if (text && text.length > 5 && !text.match(/^(yes|no|y|n)$/)) {
-              questionContext = text;
-              break;
-            }
-          }
-          
-          if (questionContext) break;
-          
-          // Also check for text nodes with question-like content
-          const walker = document.createTreeWalker(
-            parent,
-            NodeFilter.SHOW_TEXT,
-            {
-              acceptNode: (node) => {
-                const text = (node.textContent || "").trim();
-                return text.length > 10 && text.includes("?") ? NodeFilter.FILTER_ACCEPT : NodeFilter.FILTER_REJECT;
-              }
-            }
-          );
-          
-          const textNode = walker.nextNode();
-          if (textNode) {
-            questionContext = (textNode.textContent || "").trim().toLowerCase();
-            break;
-          }
-          
-          parent = parent.parentElement;
-        }
+        // Get the actual question context using improved detection
+        const questionContext = getRadioQuestionContext(el);
         
         console.log("[WDAF] Radio button:", hint, "questionContext:", questionContext, "label:", nearestLabel(el)?.toLowerCase() ?? "", "value:", value);
         
         // If no value found yet, try to infer from question context
         if (!value && questionContext) {
-          if (questionContext.includes("previously worked") || questionContext.includes("worked for") || questionContext.includes("nvidia")) {
+          if (questionContext.includes("previously worked") || questionContext.includes("worked for") || questionContext.includes("nvidia") || questionContext.includes("employee or contractor")) {
             value = p.previouslyWorkedForCompany;
             console.log("[WDAF] Inferred radio value from question context:", value);
           }
@@ -221,6 +276,18 @@ async function fillByLabels(p: ProfileData) {
       }
       if (type === "email" && !value) value = p.email ?? randomEmail();
       if (type === "tel" && !value) value = p.phoneNumber ?? randomPhone();
+      
+      // Special handling for phone-related fields
+      if (hint.includes("country phone code") || hint.includes("phone code")) {
+        value = p.phoneCode || "+1";
+      } else if (hint.includes("phone number") && !hint.includes("country")) {
+        // Extract just the number part without country code
+        const phoneNum = p.phoneNumber || randomPhone();
+        value = phoneNum.replace(/^\+\d+/, "").replace(/\D/g, ""); // Remove country code and non-digits
+      } else if (hint.includes("device type") || hint.includes("phone device")) {
+        value = p.phoneDeviceType || "Mobile";
+      }
+      
       if (!value) continue;
       setInputValue(el, String(value));
       
