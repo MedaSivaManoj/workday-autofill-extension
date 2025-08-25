@@ -131,7 +131,7 @@ async function handleCustomDropdown(inputEl: HTMLInputElement, value: string, hi
       '[data-automation-id*="option"]', 
       '[data-automation-id*="menuItem"]',
       '.WDJT_option',
-      '.css-*[role="option"]',
+      '[class*="css-"][role="option"]',
       'li[role="option"]',
       '[aria-selected]'
     ].join(', '))) as HTMLElement[];
@@ -159,6 +159,7 @@ async function handleCustomDropdown(inputEl: HTMLInputElement, value: string, hi
         '[data-automation-id*="option"]', 
         '[data-automation-id*="menuItem"]',
         '.WDJT_option',
+        '[class*="css-"][role="option"]',
         'li[role="option"]',
         '[aria-selected]'
       ].join(', '))) as HTMLElement[];
@@ -294,8 +295,11 @@ async function handleCustomSelectOneDropdowns(p: ProfileData) {
         '[data-automation-id*="option"]',
         '[data-automation-id*="menuItem"]',
         'li[role="option"]',
-        '.css-*[role="option"]',
-        'div[role="option"]'
+        'div[role="option"]',
+        '[class*="css-"][role="option"]',
+        '.WDJT_option',
+        '[aria-selected]',
+        'li[data-automation-id*="option"]'
       ].join(', '))) as HTMLElement[];
       
       console.log("[WDAF] Found dropdown options:", options.map(opt => opt.textContent?.trim()));
