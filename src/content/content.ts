@@ -170,7 +170,25 @@ async function handleCustomDropdown(inputEl: HTMLInputElement, value: string, hi
     // Strategy 4: Find and click matching option
     for (const option of dropdownOptions) {
       const optionText = (option.textContent || "").trim().toLowerCase();
-      if (optionText.includes(value.toLowerCase()) || value.toLowerCase().includes(optionText)) {
+      
+      // Skip "Select One" placeholder options
+      if (optionText === 'select one') continue;
+      
+      // Enhanced matching logic for Workday's verbose options
+      let isMatch = false;
+      
+      if (value.toLowerCase() === 'yes') {
+        isMatch = optionText.includes('yes') && !optionText.includes('no');
+      } else if (value.toLowerCase() === 'no') {
+        isMatch = optionText.includes('no') || 
+                 optionText.includes('not') || 
+                 optionText.includes('do not');
+      } else {
+        // Fallback to original partial matching
+        isMatch = optionText.includes(value.toLowerCase()) || value.toLowerCase().includes(optionText);
+      }
+      
+      if (isMatch) {
         console.log("[WDAF] Clicking dropdown option:", option.textContent);
         option.click();
         await sleep(100);
@@ -260,6 +278,9 @@ async function handleUrlField(inputEl: HTMLInputElement, url: string) {
 async function handleCustomSelectOneDropdowns(p: ProfileData) {
   console.log("[WDAF] Looking for custom 'Select One' dropdowns");
   
+  // Track processed questions to avoid duplicates
+  const processedQuestions = new Set<string>();
+  
   // Look for elements that contain "Select One" text, which indicates custom dropdowns
   const selectOneElements = Array.from(document.querySelectorAll('*')).filter(el => {
     const text = el.textContent?.trim() || '';
@@ -274,6 +295,13 @@ async function handleCustomSelectOneDropdowns(p: ProfileData) {
       const questionText = findQuestionForSelectOne(selectOneEl as HTMLElement);
       if (!questionText) continue;
       
+      // Skip if we've already processed this question
+      if (processedQuestions.has(questionText)) {
+        console.log("[WDAF] Skipping duplicate question:", questionText);
+        continue;
+      }
+      
+      processedQuestions.add(questionText);
       console.log("[WDAF] Processing Select One dropdown for question:", questionText);
       
       // Determine the appropriate value based on the question
@@ -307,7 +335,25 @@ async function handleCustomSelectOneDropdowns(p: ProfileData) {
       // Find and click the matching option
       for (const option of options) {
         const optionText = (option.textContent || '').trim().toLowerCase();
-        if (optionText === value.toLowerCase()) {
+        
+        // Skip "Select One" placeholder options
+        if (optionText === 'select one') continue;
+        
+        // Enhanced matching logic for Workday's verbose options
+        let isMatch = false;
+        
+        if (value.toLowerCase() === 'yes') {
+          isMatch = optionText.includes('yes') && !optionText.includes('no');
+        } else if (value.toLowerCase() === 'no') {
+          isMatch = optionText.includes('no') || 
+                   optionText.includes('not') || 
+                   optionText.includes('do not');
+        } else {
+          // Fallback to original exact matching
+          isMatch = optionText === value.toLowerCase();
+        }
+        
+        if (isMatch) {
           console.log("[WDAF] Clicking option:", optionText);
           option.click();
           await sleep(200);
