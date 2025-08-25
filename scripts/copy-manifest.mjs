@@ -37,7 +37,14 @@ if (Array.isArray(manifest.content_scripts)) {
       );
     }
   });
-}// ❌ Remove options_ui if pointing to popup (not needed)
+}
+
+// ✅ Fix popup path - use actual build output
+if (manifest.action?.default_popup === "popup/index.html") {
+  manifest.action.default_popup = "src/popup/index.html";
+}
+
+// ❌ Remove options_ui if pointing to popup (not needed)
 if (manifest.options_ui?.page === "popup/index.html") {
 	delete manifest.options_ui;
 }
