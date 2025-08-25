@@ -84,6 +84,16 @@ export type ProfileData = {
   howDidYouHearAboutUs?: string;
   previouslyWorkedForCompany?: string;
   hasPreferredName?: string;
+  willingToRelocate?: string;
+  nonCompeteRestrictions?: string;
+  workdaySystemExperience?: string;
+  workAuthorizedInCountry?: string;
+  requiresVisaSponsorship?: string;
+  federalGovernmentEmployee?: string;
+  exportControlCountries?: string;
+  relatedToWorkdayEmployee?: string;
+  relatedToCustomerEmployee?: string;
+  acknowledgeTermsAndConditions?: string;
   workExperiences?: WorkExperience[];
   projectExperiences?: ProjectExperience[];
   educationExperiences?: EducationExperience[];
