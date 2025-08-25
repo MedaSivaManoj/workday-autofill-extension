@@ -93,6 +93,11 @@ async function fillByLabels(p: ProfileData) {
   const inputs = Array.from(document.querySelectorAll("input, textarea, select")) as (HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement)[];
   console.log("[WDAF] Found", inputs.length, "form inputs");
   
+  // Skip if no inputs found to prevent spam
+  if (inputs.length === 0) {
+    return;
+  }
+  
   for (const el of inputs) {
     const label = nearestLabel(el);
     const hint = (label || el.getAttribute("placeholder") || el.getAttribute("aria-label") || "").trim().toLowerCase();
@@ -152,15 +157,44 @@ async function fillByLabels(p: ProfileData) {
         continue;
       }
       if (type === "radio") {
-        // For radio buttons, also check parent context for question
+        // For radio buttons, find the actual question context (not just the label)
         let questionContext = "";
         let parent = el.parentElement;
-        for (let i = 0; i < 3 && parent; i++) {
-          const questionEl = parent.querySelector("legend, h3, h4, [role='heading'], label");
-          if (questionEl) {
-            questionContext = (questionEl.textContent || "").toLowerCase();
+        
+        // Look for the question text in parent elements
+        for (let i = 0; i < 5 && parent; i++) {
+          // Look for elements that might contain the question
+          const possibleQuestions = parent.querySelectorAll("legend, h1, h2, h3, h4, h5, h6, [role='heading'], .question, [data-automation-id*='question']");
+          
+          for (const questionEl of Array.from(possibleQuestions)) {
+            const text = (questionEl.textContent || "").trim().toLowerCase();
+            // Skip if it's just "yes" or "no" or very short
+            if (text && text.length > 5 && !text.match(/^(yes|no|y|n)$/)) {
+              questionContext = text;
+              break;
+            }
+          }
+          
+          if (questionContext) break;
+          
+          // Also check for text nodes with question-like content
+          const walker = document.createTreeWalker(
+            parent,
+            NodeFilter.SHOW_TEXT,
+            {
+              acceptNode: (node) => {
+                const text = (node.textContent || "").trim();
+                return text.length > 10 && text.includes("?") ? NodeFilter.FILTER_ACCEPT : NodeFilter.FILTER_REJECT;
+              }
+            }
+          );
+          
+          const textNode = walker.nextNode();
+          if (textNode) {
+            questionContext = (textNode.textContent || "").trim().toLowerCase();
             break;
           }
+          
           parent = parent.parentElement;
         }
         
@@ -168,9 +202,9 @@ async function fillByLabels(p: ProfileData) {
         
         // If no value found yet, try to infer from question context
         if (!value && questionContext) {
-          if (questionContext.includes("previously worked") || questionContext.includes("worked for")) {
+          if (questionContext.includes("previously worked") || questionContext.includes("worked for") || questionContext.includes("nvidia")) {
             value = p.previouslyWorkedForCompany;
-            console.log("[WDAF] Inferred radio value from context:", value);
+            console.log("[WDAF] Inferred radio value from question context:", value);
           }
         }
         

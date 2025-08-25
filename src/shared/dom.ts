@@ -33,7 +33,9 @@ export function setInputValue(el: HTMLInputElement | HTMLTextAreaElement, value:
 }
 
 export function setCheckbox(el: HTMLInputElement, checked: boolean) {
+  console.log("[WDAF] Setting checkbox checked:", checked, "current state:", el.checked);
   el.checked = checked;
   el.dispatchEvent(new Event("input", { bubbles: true }));
   el.dispatchEvent(new Event("change", { bubbles: true }));
+  console.log("[WDAF] Checkbox state after setting:", el.checked);
 }
