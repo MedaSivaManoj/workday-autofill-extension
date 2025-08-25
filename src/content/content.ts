@@ -401,6 +401,36 @@ async function fillByLabels(p: ProfileData) {
           if (questionContext.includes("previously worked") || questionContext.includes("worked for") || questionContext.includes("nvidia") || questionContext.includes("employee or contractor")) {
             value = p.previouslyWorkedForCompany;
             console.log("[WDAF] Inferred radio value from question context:", value);
+          } else if (questionContext.includes("consider relocating") || questionContext.includes("relocating for this role")) {
+            value = p.willingToRelocate;
+            console.log("[WDAF] Inferred relocating value:", value);
+          } else if (questionContext.includes("non-compete") || questionContext.includes("non-solicitation") || questionContext.includes("restrictions")) {
+            value = p.nonCompeteRestrictions;
+            console.log("[WDAF] Inferred non-compete value:", value);
+          } else if (questionContext.includes("workday system") || questionContext.includes("work on the workday")) {
+            value = p.workdaySystemExperience;
+            console.log("[WDAF] Inferred workday system value:", value);
+          } else if (questionContext.includes("authorized to work") || questionContext.includes("work in the country")) {
+            value = p.workAuthorizedInCountry;
+            console.log("[WDAF] Inferred work authorization value:", value);
+          } else if (questionContext.includes("visa sponsorship") || questionContext.includes("immigration filing") || questionContext.includes("work permit")) {
+            value = p.requiresVisaSponsorship;
+            console.log("[WDAF] Inferred visa sponsorship value:", value);
+          } else if (questionContext.includes("federal government") || questionContext.includes("military officer") || questionContext.includes("u.s. federal")) {
+            value = p.federalGovernmentEmployee;
+            console.log("[WDAF] Inferred federal government value:", value);
+          } else if (questionContext.includes("export control") || questionContext.includes("iran, cuba, north korea") || questionContext.includes("current citizen")) {
+            value = p.exportControlCountries;
+            console.log("[WDAF] Inferred export control value:", value);
+          } else if (questionContext.includes("related to a current workday") || questionContext.includes("workday employee")) {
+            value = p.relatedToWorkdayEmployee;
+            console.log("[WDAF] Inferred workday employee relation value:", value);
+          } else if (questionContext.includes("related to an employee") || questionContext.includes("customer employee") || questionContext.includes("government official")) {
+            value = p.relatedToCustomerEmployee;
+            console.log("[WDAF] Inferred customer employee relation value:", value);
+          } else if (questionContext.includes("i acknowledge") || questionContext.includes("read, understood") || questionContext.includes("truthfully and accurately")) {
+            value = p.acknowledgeTermsAndConditions;
+            console.log("[WDAF] Inferred acknowledgment value:", value);
           }
         }
         

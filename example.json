@@ -47,6 +47,16 @@
   "howDidYouHearAboutUs": "Facebook",
   "previouslyWorkedForCompany": "No",
   "hasPreferredName": "Yes",
+  "willingToRelocate": "Yes",
+  "nonCompeteRestrictions": "No",
+  "workdaySystemExperience": "No",
+  "workAuthorizedInCountry": "Yes",
+  "requiresVisaSponsorship": "No",
+  "federalGovernmentEmployee": "No",
+  "exportControlCountries": "No",
+  "relatedToWorkdayEmployee": "No",
+  "relatedToCustomerEmployee": "No",
+  "acknowledgeTermsAndConditions": "Yes",
   "workExperiences": [
     {
       "jobTitle": "Software Engineer",
