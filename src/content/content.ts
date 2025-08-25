@@ -223,6 +223,14 @@ async function fillByLabels(p: ProfileData) {
       if (type === "tel" && !value) value = p.phoneNumber ?? randomPhone();
       if (!value) continue;
       setInputValue(el, String(value));
+      
+      // For text inputs that might be dropdowns with autocomplete, trigger additional events
+      if (hint.includes("how did you hear") || hint.includes("device type") || hint.includes("source")) {
+        await sleep(200);
+        el.dispatchEvent(new Event("focus", { bubbles: true }));
+        await sleep(100);
+        el.dispatchEvent(new Event("blur", { bubbles: true }));
+      }
       continue;
     }
     if (el instanceof HTMLTextAreaElement) {
@@ -237,13 +245,21 @@ async function fillByLabels(p: ProfileData) {
       if (!value) continue;
       const options = Array.from(el.options);
       console.log("[WDAF] Dropdown:", hint, "value:", value, "options:", options.map(o => o.textContent?.trim()));
-      const idx = options.findIndex(o => (o.textContent || "").trim().toLowerCase().includes(String(value).toLowerCase()));
+      
+      // Try exact match first, then partial match
+      let idx = options.findIndex(o => (o.textContent || "").trim().toLowerCase() === String(value).toLowerCase());
+      if (idx < 0) {
+        idx = options.findIndex(o => (o.textContent || "").trim().toLowerCase().includes(String(value).toLowerCase()));
+      }
+      
       if (idx >= 0) { 
         console.log("[WDAF] Selecting dropdown option:", options[idx].textContent, "at index:", idx);
         el.selectedIndex = idx; 
         el.dispatchEvent(new Event("change", { bubbles: true })); 
+        el.dispatchEvent(new Event("input", { bubbles: true })); 
       } else {
         console.log("[WDAF] No matching option found for:", value);
+        console.log("[WDAF] Available options:", options.map(o => `"${o.textContent?.trim()}"`));
       }
       continue;
     }
