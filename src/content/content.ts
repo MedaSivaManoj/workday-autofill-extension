@@ -115,6 +115,103 @@ function getRadioQuestionContext(radio: HTMLInputElement): string {
   return "";
 }
 
+async function handleCustomDropdown(inputEl: HTMLInputElement, value: string, hint: string) {
+  console.log("[WDAF] Handling custom dropdown:", hint, "target value:", value);
+  
+  try {
+    // Strategy 1: Click the input to trigger dropdown
+    inputEl.focus();
+    await sleep(100);
+    inputEl.click();
+    await sleep(300);
+    
+    // Strategy 2: Look for dropdown options that appeared
+    let dropdownOptions = Array.from(document.querySelectorAll([
+      '[role="option"]',
+      '[data-automation-id*="option"]', 
+      '[data-automation-id*="menuItem"]',
+      '.WDJT_option',
+      '.css-*[role="option"]',
+      'li[role="option"]',
+      '[aria-selected]'
+    ].join(', '))) as HTMLElement[];
+    
+    console.log("[WDAF] Found dropdown options:", dropdownOptions.map(opt => opt.textContent?.trim()));
+    
+    if (dropdownOptions.length === 0) {
+      // Strategy 3: Try typing to trigger autocomplete
+      inputEl.value = "";
+      inputEl.dispatchEvent(new Event("input", { bubbles: true }));
+      await sleep(100);
+      
+      // Type the value character by character
+      for (let i = 0; i < value.length; i++) {
+        inputEl.value = value.substring(0, i + 1);
+        inputEl.dispatchEvent(new Event("input", { bubbles: true }));
+        await sleep(50);
+      }
+      
+      await sleep(300);
+      
+      // Look for options again
+      dropdownOptions = Array.from(document.querySelectorAll([
+        '[role="option"]',
+        '[data-automation-id*="option"]', 
+        '[data-automation-id*="menuItem"]',
+        '.WDJT_option',
+        'li[role="option"]',
+        '[aria-selected]'
+      ].join(', '))) as HTMLElement[];
+      
+      console.log("[WDAF] After typing, found options:", dropdownOptions.map(opt => opt.textContent?.trim()));
+    }
+    
+    // Strategy 4: Find and click matching option
+    for (const option of dropdownOptions) {
+      const optionText = (option.textContent || "").trim().toLowerCase();
+      if (optionText.includes(value.toLowerCase()) || value.toLowerCase().includes(optionText)) {
+        console.log("[WDAF] Clicking dropdown option:", option.textContent);
+        option.click();
+        await sleep(100);
+        return;
+      }
+    }
+    
+    // Strategy 5: Try arrow keys if no direct match
+    if (dropdownOptions.length > 0) {
+      console.log("[WDAF] No exact match, trying arrow keys navigation");
+      inputEl.focus();
+      
+      // Press down arrow to highlight first option
+      inputEl.dispatchEvent(new KeyboardEvent("keydown", { key: "ArrowDown", bubbles: true }));
+      await sleep(100);
+      
+      // Try up to 10 arrow down presses to find our option
+      for (let i = 0; i < Math.min(10, dropdownOptions.length); i++) {
+        // Check if current highlighted option matches
+        const activeOption = document.querySelector('[aria-selected="true"], .highlighted, .selected') as HTMLElement;
+        if (activeOption) {
+          const activeText = (activeOption.textContent || "").trim().toLowerCase();
+          if (activeText.includes(value.toLowerCase())) {
+            console.log("[WDAF] Found match with arrow keys:", activeOption.textContent);
+            inputEl.dispatchEvent(new KeyboardEvent("keydown", { key: "Enter", bubbles: true }));
+            await sleep(100);
+            return;
+          }
+        }
+        
+        // Move to next option
+        inputEl.dispatchEvent(new KeyboardEvent("keydown", { key: "ArrowDown", bubbles: true }));
+        await sleep(100);
+      }
+    }
+    
+    console.log("[WDAF] Could not select dropdown option for:", value);
+  } catch (error) {
+    console.error("[WDAF] Error handling custom dropdown:", error);
+  }
+}
+
 async function start() {
   if (window.__WDAF_RUNNING || window.__WDAF_INITIALIZED) return;
   window.__WDAF_RUNNING = true;
@@ -289,15 +386,15 @@ async function fillByLabels(p: ProfileData) {
       }
       
       if (!value) continue;
-      setInputValue(el, String(value));
       
-      // For text inputs that might be dropdowns with autocomplete, trigger additional events
+      // Special handling for Workday custom dropdowns
       if (hint.includes("how did you hear") || hint.includes("device type") || hint.includes("source")) {
-        await sleep(200);
-        el.dispatchEvent(new Event("focus", { bubbles: true }));
-        await sleep(100);
-        el.dispatchEvent(new Event("blur", { bubbles: true }));
+        console.log("[WDAF] Detected custom dropdown field:", hint, "value:", value);
+        await handleCustomDropdown(el, String(value), hint);
+        continue;
       }
+      
+      setInputValue(el, String(value));
       continue;
     }
     if (el instanceof HTMLTextAreaElement) {
