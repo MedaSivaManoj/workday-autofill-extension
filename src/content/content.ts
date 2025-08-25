@@ -212,6 +212,50 @@ async function handleCustomDropdown(inputEl: HTMLInputElement, value: string, hi
   }
 }
 
+async function handleUrlField(inputEl: HTMLInputElement, url: string) {
+  console.log("[WDAF] Handling URL field with value:", url);
+  
+  try {
+    // Clear the field first
+    inputEl.value = "";
+    inputEl.dispatchEvent(new Event("input", { bubbles: true }));
+    await sleep(100);
+    
+    // Focus the field
+    inputEl.focus();
+    await sleep(100);
+    
+    // Set the URL value using the native setter
+    const nativeSetter = Object.getOwnPropertyDescriptor(Object.getPrototypeOf(inputEl), "value")?.set;
+    if (nativeSetter) {
+      nativeSetter.call(inputEl, url);
+    } else {
+      inputEl.value = url;
+    }
+    
+    // Trigger comprehensive validation events
+    inputEl.dispatchEvent(new Event("input", { bubbles: true }));
+    await sleep(50);
+    inputEl.dispatchEvent(new Event("change", { bubbles: true }));
+    await sleep(50);
+    
+    // Additional events that Workday might need for URL validation
+    inputEl.dispatchEvent(new Event("keyup", { bubbles: true }));
+    await sleep(50);
+    inputEl.dispatchEvent(new Event("blur", { bubbles: true }));
+    await sleep(100);
+    
+    // Re-focus to trigger any final validation
+    inputEl.focus();
+    await sleep(50);
+    inputEl.dispatchEvent(new Event("blur", { bubbles: true }));
+    
+    console.log("[WDAF] URL field filled and validated:", inputEl.value);
+  } catch (error) {
+    console.error("[WDAF] Error handling URL field:", error);
+  }
+}
+
 async function start() {
   if (window.__WDAF_RUNNING || window.__WDAF_INITIALIZED) return;
   window.__WDAF_RUNNING = true;
@@ -391,6 +435,13 @@ async function fillByLabels(p: ProfileData) {
       if (hint.includes("how did you hear") || hint.includes("device type") || hint.includes("source")) {
         console.log("[WDAF] Detected custom dropdown field:", hint, "value:", value);
         await handleCustomDropdown(el, String(value), hint);
+        continue;
+      }
+      
+      // Special handling for URL fields that need extra validation
+      if (hint.includes("linkedin") || hint.includes("url") || hint.includes("website") || hint.includes("portfolio")) {
+        console.log("[WDAF] Detected URL field:", hint, "value:", value);
+        await handleUrlField(el, String(value));
         continue;
       }
       
