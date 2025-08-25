@@ -256,6 +256,116 @@ async function handleUrlField(inputEl: HTMLInputElement, url: string) {
   }
 }
 
+async function handleCustomSelectOneDropdowns(p: ProfileData) {
+  console.log("[WDAF] Looking for custom 'Select One' dropdowns");
+  
+  // Look for elements that contain "Select One" text, which indicates custom dropdowns
+  const selectOneElements = Array.from(document.querySelectorAll('*')).filter(el => {
+    const text = el.textContent?.trim() || '';
+    return text === 'Select One' && el.tagName !== 'SCRIPT';
+  });
+  
+  console.log("[WDAF] Found", selectOneElements.length, "Select One dropdowns");
+  
+  for (const selectOneEl of selectOneElements) {
+    try {
+      // Find the question text by looking at nearby elements
+      const questionText = findQuestionForSelectOne(selectOneEl as HTMLElement);
+      if (!questionText) continue;
+      
+      console.log("[WDAF] Processing Select One dropdown for question:", questionText);
+      
+      // Determine the appropriate value based on the question
+      const value = getValueForQuestion(questionText, p);
+      if (!value) {
+        console.log("[WDAF] No value found for question:", questionText);
+        continue;
+      }
+      
+      console.log("[WDAF] Using value:", value, "for question:", questionText);
+      
+      // Click the Select One element to open the dropdown
+      (selectOneEl as HTMLElement).click();
+      await sleep(300);
+      
+      // Look for dropdown options
+      const options = Array.from(document.querySelectorAll([
+        '[role="option"]',
+        '[data-automation-id*="option"]',
+        '[data-automation-id*="menuItem"]',
+        'li[role="option"]',
+        '.css-*[role="option"]',
+        'div[role="option"]'
+      ].join(', '))) as HTMLElement[];
+      
+      console.log("[WDAF] Found dropdown options:", options.map(opt => opt.textContent?.trim()));
+      
+      // Find and click the matching option
+      for (const option of options) {
+        const optionText = (option.textContent || '').trim().toLowerCase();
+        if (optionText === value.toLowerCase()) {
+          console.log("[WDAF] Clicking option:", optionText);
+          option.click();
+          await sleep(200);
+          break;
+        }
+      }
+      
+    } catch (error) {
+      console.error("[WDAF] Error handling Select One dropdown:", error);
+    }
+  }
+}
+
+function findQuestionForSelectOne(selectOneEl: HTMLElement): string | null {
+  // Look for question text in parent elements
+  let parent = selectOneEl.parentElement;
+  let attempts = 0;
+  
+  while (parent && attempts < 5) {
+    const questionElements = Array.from(parent.querySelectorAll('*'));
+    for (const el of questionElements) {
+      const text = el.textContent?.trim() || '';
+      if (text.includes('?') && text.length > 20 && text.length < 500) {
+        // This looks like a question
+        return text.toLowerCase();
+      }
+    }
+    parent = parent.parentElement;
+    attempts++;
+  }
+  
+  return null;
+}
+
+function getValueForQuestion(question: string, p: ProfileData): string | null {
+  const q = question.toLowerCase();
+  
+  if (q.includes('consider relocating') || q.includes('relocating for this role')) {
+    return p.willingToRelocate || 'Yes';
+  } else if (q.includes('non-compete') || q.includes('non-solicitation') || q.includes('restrictions')) {
+    return p.nonCompeteRestrictions || 'No';
+  } else if (q.includes('workday system') || q.includes('work on the workday')) {
+    return p.workdaySystemExperience || 'No';
+  } else if (q.includes('authorized to work') || q.includes('work in the country')) {
+    return p.workAuthorizedInCountry || 'Yes';
+  } else if (q.includes('visa sponsorship') || q.includes('immigration filing') || q.includes('work permit')) {
+    return p.requiresVisaSponsorship || 'No';
+  } else if (q.includes('federal government') || q.includes('military officer') || q.includes('u.s. federal')) {
+    return p.federalGovernmentEmployee || 'No';
+  } else if (q.includes('export control') || q.includes('iran, cuba, north korea') || q.includes('current citizen')) {
+    return p.exportControlCountries || 'No';
+  } else if (q.includes('related to a current workday') || q.includes('workday employee')) {
+    return p.relatedToWorkdayEmployee || 'No';
+  } else if (q.includes('related to an employee') || q.includes('customer employee') || q.includes('government official')) {
+    return p.relatedToCustomerEmployee || 'No';
+  } else if (q.includes('i acknowledge') || q.includes('read, understood') || q.includes('truthfully and accurately')) {
+    return p.acknowledgeTermsAndConditions || 'Yes';
+  }
+  
+  return null;
+}
+
 async function start() {
   if (window.__WDAF_RUNNING || window.__WDAF_INITIALIZED) return;
   window.__WDAF_RUNNING = true;
@@ -331,6 +441,9 @@ async function fillByLabels(p: ProfileData) {
   if (inputs.length === 0) {
     return;
   }
+  
+  // Also handle custom "Select One" dropdowns
+  await handleCustomSelectOneDropdowns(p);
   
   for (const el of inputs) {
     const label = nearestLabel(el);
