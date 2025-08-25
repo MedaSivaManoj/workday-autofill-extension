@@ -42,6 +42,11 @@ if (manifest.options_ui?.page === "popup/index.html") {
 	delete manifest.options_ui;
 }
 
+// ✅ Fix popup path - use actual build output
+if (manifest.action?.default_popup === "popup/index.html") {
+  manifest.action.default_popup = "src/popup/index.html";
+}
+
 // Write updated manifest to dist
 fs.writeFileSync(dest, JSON.stringify(manifest, null, 2));
 console.log("✅ Manifest copied & fixed paths");
